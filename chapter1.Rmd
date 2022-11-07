@@ -1,7 +1,15 @@
+# Chapter 1
 
-# About the project
+[Now playing][1]\
+[My GitHub IODS repository][2]\
 
-*Write a short description about the course and add a link to your GitHub repository here. This is an R Markdown (.Rmd) file so you should use R Markdown syntax.*
+
+**How am I feeling right now?**  
+5 minutes after switching from my UH computer to my personal computer, I finally got the environment working (after struggling with my work computer for 6 hours)! Feeling slightly annoyed now.    
+---  
+**Impressions from R for health data science & Exercise set 1**  
+I'm already slightly familiar with programming and R, so I didn't go through everything in great detail.\
+Many of the practical examples and recommendations, such as the one about equivalence & rounding, seem very useful and probably will have saved me from a big headache. On the other hand, I skimmed through the import data section as it had nothing new for me. Everything else will serve as a great reminder.
 
 ```{r}
 # This is a so-called "R chunk" where you can write R code.
@@ -9,5 +17,6 @@
 date()
 
 ```
-The text continues here.
 
+[1]: https://www.youtube.com/watch?v=bhlD1XfiEJE
+[2]: https://github.com/voikukas/IODS-project
