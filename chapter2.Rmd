@@ -8,6 +8,25 @@
 
 ```{r}
 date()
+lrndata <- read.csv("data/learning2014.csv")
+
 ```
 
-Here we go again...
+1. 
+The data contain a condensed version of a full questionnaire dataset (details at https://www.mv.helsinki.fi/home/kvehkala/JYTmooc/JYTOPKYS2-meta.txt). Students in an introductory statistics course have answered a questionnaire regarding their approaches and attitudes towards learning and statistics; additionally, their exam points and other background variables have been collected.
+
+Questionnaire variables: 
+Respondents have given their answers on a 1-5 scale. 
+From the raw data, certain variables have been combined (and scaled back) in order to measure the respondents' use of the following learning approaches: deep (variable name deep), strategic (stra), and surface (surf). The variable 'attitude' combines questions about respondents' attitude towards statistics.
+
+Other variables:
+  gender
+  age
+  points (note: respondents with 0 points have been removed)
+
+```{r}
+
+dim(lrndata)
+
+```
+

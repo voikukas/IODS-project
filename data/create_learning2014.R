@@ -37,3 +37,17 @@ lrn14$stra <- rowMeans(strategic_columns)
 keep <- c("gender","Age","attitude", "deep", "stra", "surf", "Points")
 
 learning_data <- select(lrn14, one_of(keep))
+
+# convert header names to lowercase
+
+colnames(learning_data) <- tolower(colnames(learning_data))
+
+# select rows where points is greater than zero
+learning_data <- filter(learning_data, points > 0)
+
+### Data wrangling 4.
+
+write.csv(learning_data, file = "data/learning2014.csv", row.names = FALSE)
+demo <- read.csv("data/learning2014.csv")
+str(demo)
+head(demo)
