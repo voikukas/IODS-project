@@ -27,6 +27,21 @@ Other variables:
 ```{r}
 
 dim(lrndata)
+head(lrndata)
 
 ```
+There are 166 respondents (rows) and 7 variables (columns).
+
+2. 
+
+```{r}
+# library(ggplot2)
+# library(GGally)
+
+pairs(learning2014[-1])
+p <- ggpairs(learning2014, mapping = aes(), lower = list(combo = wrap("facethist", bins = 20)))
+p
+
+```
+
 
