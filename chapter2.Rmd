@@ -1,18 +1,16 @@
-# Insert chapter 2 title here
+# Regression and model validation
 
 *Describe the work you have done this week and summarize your learning.*
 
-- Describe your work and results clearly. 
-- Assume the reader has an introductory course level understanding of writing and reading R code as well as statistical methods.
-- Assume the reader has no previous knowledge of your data or the more advanced methods you are using.
+This week, I worked with the exercise set and read through R for Health Data Science to be able to answer the stats questions. I learned something new about plotting (ggpairs is super nifty) and statistical analysis with R. I don't want to touch SPSS ever again.
 
 ```{r}
 date()
-lrndata <- read.csv("data/learning2014.csv")
+learning2014 <- read.csv("data/learning2014.csv")
 
 ```
 
-1. 
+## 1. 
 The data contain a condensed version of a full questionnaire dataset (details at https://www.mv.helsinki.fi/home/kvehkala/JYTmooc/JYTOPKYS2-meta.txt). Students in an introductory statistics course have answered a questionnaire regarding their approaches and attitudes towards learning and statistics; additionally, their exam points and other background variables have been collected.
 
 Questionnaire variables: 
@@ -26,22 +24,86 @@ Other variables:
 
 ```{r}
 
-dim(lrndata)
-head(lrndata)
+dim(learning2014)
+head(learning2014)
 
 ```
 There are 166 respondents (rows) and 7 variables (columns).
 
-2. 
+## 2. 
 
 ```{r}
 # library(ggplot2)
 # library(GGally)
+# library(dplyr)
 
-pairs(learning2014[-1])
-p <- ggpairs(learning2014, mapping = aes(), lower = list(combo = wrap("facethist", bins = 20)))
+# Checking number of female respondents
+nrow(filter(learning2014, gender =="F"))
+
+# Graphical overview & variable summaries
+p <- ggpairs(learning2014, mapping = aes(col=gender, alpha=.3), lower = list(combo = wrap("facethist", bins = 20)))
+
 p
 
 ```
+
+There are 110 female respondents and 56 male respondents, which may bias the data towards female respondents. Thus, it makes sense to explore the data grouped by gender.  
+By looking at the data densities grouped by gender, we can see that the distributions are somewhat similar in all variables. Largest gender differences seem to show in attitude (male respondents report a more neutral/positive attitude). 
+
+Most respondents are under 30 years old, but ages range from 17 to 55. 
+There are no significant interactions between age and other variables.
+
+The strongest correlation can be found between attitude and points (.437, p < .001). 
+In males, there is a negative correlation between attitude and surface approach (r = -.374, p < .01). Males also show a strong negative correlation between deep and surface approaches (-.622, p < .001). 
+
+While there is a negative correlation between strategic and surface approaches (-.16, p < .05), it is not present in any of the genders separately.
+
+## 3. & 4.
+Chosen explanatory variables: attitude, deep, and surface approach
+
+```{r}
+
+model <- lm(points ~ attitude + deep + surf, data = learning2014)
+summary(model)
+
+```
+Variables deep and surf do not have a statistically significant relationship with points; adjusting the model. 
+
+```{r}
+
+model <- lm(points ~ attitude + stra, data = learning2014)
+summary(model)
+
+```
+
+We're looking at the relationship between two variables; we'd like to see how "attitude" explains the obtained course points. Using ordinary least squares, simple linear regression fits a line to the observed data (where y is the dependent variable and x is the explanatory variable). 
+Residuals are the differences between observed values and the fitted line(s). The median of residuals is .56, which suggests that the data fits the model quite nicely (but further analyses show whether this is true or not).
+
+The coefficient intercept estimates: when attitude+stra = 0, points are at ~9 (p < .001 at null hypothesis, so when slope is at 0). The coefficient estimate of the explanatory variables are the slopes of the regression line (p < .001 for attitude, p < .1 for stra).
+
+The adjusted R-squared stands for the coefficient of determination and is an indicator of how much of the variability is explained by the explanatory variable. It is at .1951, which is not that great. Thus, attitude and stra are not the only factors explaining the scores.
+
+## 5. 
+```{r}
+# Scatter plots
+qplot(attitude, points, data = learning2014) + geom_smooth(method = "lm")
+qplot(stra, points, data = learning2014) + geom_smooth(method = "lm")
+
+# Diagnostic plots
+par(mfrow=c(2,2))
+plot(model, which=c(1,2,5))
+```
+A simple regression model assumes
+#### A linear relationship between predictors and outcome
+The scatter plots describe a somewhat linear pattern.
+
+#### Independence of residuals
+The observations are independent (each data point represents an individual).
+
+#### Normal distribution of residuals
+Q-Q plot looks normally distributed. 
+
+#### Equal variance of residuals
+Residuals vs fitted plot looks balanced.
 
 
