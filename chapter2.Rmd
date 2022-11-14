@@ -6,6 +6,9 @@ This week, I worked with the exercise set and read through R for Health Data Sci
 
 ```{r}
 date()
+library(ggplot2)
+library(GGally)
+library(dplyr)
 learning2014 <- read.csv("data/learning2014.csv")
 
 ```
@@ -33,9 +36,6 @@ There are 166 respondents (rows) and 7 variables (columns).
 ## 2. 
 
 ```{r}
-# library(ggplot2)
-# library(GGally)
-# library(dplyr)
 
 # Checking number of female respondents
 nrow(filter(learning2014, gender =="F"))
@@ -94,16 +94,17 @@ par(mfrow=c(2,2))
 plot(model, which=c(1,2,5))
 ```
 A simple regression model assumes
-#### A linear relationship between predictors and outcome
+
+*A linear relationship between predictors and outcome*
 The scatter plots describe a somewhat linear pattern.
 
-#### Independence of residuals
+*Independence of residuals*
 The observations are independent (each data point represents an individual).
 
-#### Normal distribution of residuals
+*Normal distribution of residuals*
 Q-Q plot looks normally distributed. 
 
-#### Equal variance of residuals
+*Equal variance of residuals*
 Residuals vs fitted plot looks balanced.
 
 
