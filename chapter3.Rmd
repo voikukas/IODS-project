@@ -89,6 +89,17 @@ alc %>% group_by(high_use, failures) %>% summarise(count = n())
 
 m <- glm(high_use ~ famrel + G3 + goout + failures, data = alc, family = "binomial")
 
+# view summary
+summary(m)
+
+```
+Going out is the strongest predictor of high alcohol use (p < .001). Family relations also have a significance level of < .01. Failures are significant at p < .05. 
+
+Final grade does not have a significant correlation with high use. 
+
+In terms of my hypotheses, famrel, goout and failures are supported. G3 is not.
+
+```{r}
 # compute odds ratios (OR)
 OR <- coef(m) %>% exp
 
@@ -99,6 +110,6 @@ CI <- confint(m) %>% exp
 cbind(OR, CI)
 
 ```
-
+The odds ratio here is the change in the odds of high/low alcohol use. 
 
 

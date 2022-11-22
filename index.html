@@ -424,7 +424,7 @@ will serve as a great reminder.</p>
 <pre class="r"><code># This is a so-called &quot;R chunk&quot; where you can write R code.
 
 date()</code></pre>
-<pre><code>## [1] &quot;Tue Nov 22 08:26:09 2022&quot;</code></pre>
+<pre><code>## [1] &quot;Tue Nov 22 08:59:27 2022&quot;</code></pre>
 <hr />
 </div>
 <div id="regression-and-model-validation" class="section level1">
@@ -436,7 +436,7 @@ Health Data Science to be able to answer the stats questions. I learned
 something new about plotting (ggpairs is super nifty) and statistical
 analysis with R. I don’t want to touch SPSS ever again.</p>
 <pre class="r"><code>date()</code></pre>
-<pre><code>## [1] &quot;Tue Nov 22 08:26:09 2022&quot;</code></pre>
+<pre><code>## [1] &quot;Tue Nov 22 08:59:27 2022&quot;</code></pre>
 <pre class="r"><code>library(ggplot2)
 library(GGally)</code></pre>
 <pre><code>## Registered S3 method overwritten by &#39;GGally&#39;:
@@ -604,7 +604,7 @@ balanced.</p>
 <div id="logistic-regression" class="section level1">
 <h1>Logistic regression</h1>
 <pre class="r"><code>date()</code></pre>
-<pre><code>## [1] &quot;Tue Nov 22 08:26:24 2022&quot;</code></pre>
+<pre><code>## [1] &quot;Tue Nov 22 08:59:42 2022&quot;</code></pre>
 <pre class="r"><code>library(ggplot2)
 library(GGally)
 library(dplyr)
@@ -789,7 +789,42 @@ alc %&gt;% group_by(high_use, failures) %&gt;% summarise(count = n())</code></pr
 <h2>5.</h2>
 <pre class="r"><code>m &lt;- glm(high_use ~ famrel + G3 + goout + failures, data = alc, family = &quot;binomial&quot;)
 
-# compute odds ratios (OR)
+# view summary
+summary(m)</code></pre>
+<pre><code>## 
+## Call:
+## glm(formula = high_use ~ famrel + G3 + goout + failures, family = &quot;binomial&quot;, 
+##     data = alc)
+## 
+## Deviance Residuals: 
+##     Min       1Q   Median       3Q      Max  
+## -1.8046  -0.7672  -0.5733   0.9947   2.3416  
+## 
+## Coefficients:
+##             Estimate Std. Error z value Pr(&gt;|z|)    
+## (Intercept) -1.68968    0.80944  -2.087   0.0368 *  
+## famrel      -0.37266    0.13616  -2.737   0.0062 ** 
+## G3          -0.02464    0.04099  -0.601   0.5478    
+## goout        0.75188    0.12022   6.254    4e-10 ***
+## failures     0.48924    0.22963   2.131   0.0331 *  
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## (Dispersion parameter for binomial family taken to be 1)
+## 
+##     Null deviance: 452.04  on 369  degrees of freedom
+## Residual deviance: 388.05  on 365  degrees of freedom
+## AIC: 398.05
+## 
+## Number of Fisher Scoring iterations: 4</code></pre>
+<p>Going out is the strongest predictor of high alcohol use (p &lt;
+.001). Family relations also have a significance level of &lt; .01.
+Failures are significant at p &lt; .05.</p>
+<p>Final grade does not have a significant correlation with high
+use.</p>
+<p>In terms of my hypotheses, famrel, goout and failures are supported.
+G3 is not.</p>
+<pre class="r"><code># compute odds ratios (OR)
 OR &lt;- coef(m) %&gt;% exp
 
 # compute confidence intervals (CI)
@@ -803,6 +838,8 @@ cbind(OR, CI)</code></pre>
 ## G3          0.9756601 0.90036973 1.0578228
 ## goout       2.1209922 1.68623053 2.7043570
 ## failures    1.6310777 1.04644221 2.5883902</code></pre>
+<p>The odds ratio here is the change in the odds of high/low alcohol
+use.</p>
 <hr />
 <p>(more chapters to be added similarly as we proceed with the
 course!)</p>
