@@ -1,0 +1,104 @@
+# Logistic regression
+
+
+
+```{r}
+date()
+library(ggplot2)
+library(GGally)
+library(dplyr)
+alc <- read.csv("data/alc.csv")
+
+```
+
+## 2. 
+The data, gathered of students in secondary education in two Portuguese schools, describe student achievement in Portuguese and mathematics. Detailed description of the data set and all attributes can be found [here](https://archive.ics.uci.edu/ml/datasets/Student+Performance). 
+
+Our version is modified from the original as follows:
+Only students with both Portuguese and maths grades available have been included.
+
+Averaged grades:
+G1 first period grade average of Math and Portuguese (0-20)
+G2 second period grade average of Math and Portuguese (0-20)
+G3 third period grade average of Math and Portuguese (0-20)
+
+Variables on alcohol use:
+alc_use average alcohol use based on workday and weekend alcohol consumption (from 1 - very low to 5 - very high)
+high_use high use of alcohol: TRUE if alc_use is > 2; otherwise FALSE
+
+
+```{r}
+
+head(alc)
+glimpse(alc)
+
+```
+There are 370 observations (students) and 35 attributes.
+
+## 3. 
+Chosen variables and hypotheses:
+* famrel (Quality of family relationships 1-5)
+My suspicion is that poor family relationships might correlate with higher alcohol consumption, i.e., there could be a negative correlation.
+
+* G3 (Final grade 0-20)
+Again, a possible negative correlation.
+
+* goout (Going out with friends 1-5)
+Outgoing people might use more alcohol. 
+
+* failures (Number of past class failures)
+More failures might correlate with more alcohol consumption.
+
+## 4. 
+```{r}
+
+g1 <- ggplot(data = alc, aes(x = high_use))
+g2 <- ggplot(data = alc, aes(x = alc_use))
+
+# Plot bar plots grouped by family relations
+g1 + geom_bar() + facet_wrap("famrel")
+# Most respondents report great relations with their parents. In fact, there are very few respondents who report worse relations (famrel <=2) to begin with.
+# Those with worse relations do not report higher alcohol use relative to those with better relations. 
+# It's hard to tell counts from bar plots, so let's check cross-tabulations
+alc %>% group_by(famrel, high_use) %>% summarise(count = n())
+# Here, my hypothesis seems wrong.
+
+# Plot boxplots of grade and high use
+g3 <- ggplot(alc, aes(x = high_use, y = G3))
+g3 + geom_boxplot() + ylab("grade")
+# Non-high users seem to have slightly larger variation in their grades, and indeed better grades. There are some outliers among high users in both ends, though.
+
+# Plot bar plots grouped by going out
+g1 + geom_bar() + facet_wrap("goout")
+# Most people seem to be in the "moderately outgoing" category (goout value at 3).
+# Very outgoing people are more likely to report higher use of alcohol than lower use of alcohol, which lends support to my hypothesis. 
+# Let's look at cross-tabulations, too
+alc %>% group_by(goout, high_use) %>% summarise(count = n())
+
+# Check cross-tabulations of failures and high use
+alc %>% group_by(high_use, failures) %>% summarise(count = n())
+# Can't really say that the data lend support to my hypothesis here: there are very few failures in total and they seem to be somewhat evenly distributed between high and non-high users. However, considering the proportions of high vs. non-high users, there are proportionally considerably more non-high users with zero failures.
+
+
+
+```
+
+## 5. 
+
+```{r}
+
+m <- glm(high_use ~ famrel + G3 + goout + failures, data = alc, family = "binomial")
+
+# compute odds ratios (OR)
+OR <- coef(m) %>% exp
+
+# compute confidence intervals (CI)
+CI <- confint(m) %>% exp
+
+# print out the odds ratios with their confidence intervals
+cbind(OR, CI)
+
+```
+
+
+
