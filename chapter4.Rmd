@@ -1,0 +1,155 @@
+# Clustering and classification
+
+
+
+```{r}
+date()
+#library(ggplot2)
+#library(GGally)
+#library(dplyr)
+library(MASS)
+library(tidyr)
+library(corrplot)
+data("Boston")
+
+```
+
+## 2. 
+The data set describes housing value in suburbs of Boston, Massachusetts. The data set has been put together and analyzed by Harrison & Rubinfeld (1978). The raw data has been collected in ~1970 (Harrison & Rubinfeld, 1978).
+
+Listing of its variables are available [here](https://stat.ethz.ch/R-manual/R-devel/library/MASS/html/Boston.html), for instance. Definitions of how the variables have been collected and calculated can be found in Harrison, D. and Rubinfeld, D.L. (1978) Hedonic prices and the demand for clean air. J. Environ. Economics and Management 5, 81–102. 
+
+```{r}
+
+str(Boston)
+
+```
+There are 506 observations and 14 variables. Each observation represents one neighborhood/town. 
+
+In summary, the variables include median values of homes, variables describing housing, infrastructural, environmental and industrial structure, and demographic information on the neighborhood (Harrison & Rubinfeld, 1978). 
+
+```{r}
+
+summary(Boston)
+
+```
+
+The median value of housing seems to be capped at $50.000, which looks like an artificial decision. 
+
+Let's visualize the data set. 
+
+## 3. 
+
+```{r}
+# Create scatterplot matrix
+pairs(Boston)
+
+```
+### Commenting on median value plotted against other factors: 
+Not surprisingly, higher-value areas have lower crime rates. The density of residential areas (var zn) and whether tract bounds river (chas [this is not surprising as this is a dummy variable anyway]) do not have a clear effect on housing value. Prices seem to be lower where industrial density is very high, but low industrial density has both high and low-value areas. The situation looks fairly similar with highly polluted areas (one might ask how independent nox and indus are). As average number of rooms in units (rm) grows, so does value -- again, not surprisingly. 
+Newest areas are not cheap, but the priciest areas are not new. Both the cheapest and the most expensive area seem to have a short distance to Boston employment centers. Rad -- index of accessibility to radial highways -- seems to have a very binary distribution despite its values varying from 1 to 24. I am not sure how to interpret how tax and value are related (the highest taxes seem to be in cheapest areas, which seems odd from someone coming from a progressive tax state). Pupil-teacher ratio is generally lower in more valuable neighborhoods, as one would expect. Towns with a lower proportion of African-Americans are not among the most expensive areas. There is a high correlation between the price of housing and lower percentage of "lower-status" population (whatever that means).
+
+
+```{r}
+# Look at correlations
+corbos = cor(Boston)
+corrplot(corbos)
+```
+The strongest correlation seems to be between radial highway accessibility and property tax rate. Looking at the scatterplot matrix, there is a highly taxed highly accessible outlier, which may confound the results. 
+Distance and pollution have a strong negative correlation: far-away areas have lower pollution.
+Nox and indus are also strongly correlated.
+
+## 4. 
+```{r}
+
+# Standardize the dataset and print out summaries of the scaled data. How did the variables change? Create a categorical variable of the crime rate in the Boston dataset (from the scaled crime rate). Use the quantiles as the break points in the categorical variable. Drop the old crime rate variable from the dataset. Divide the dataset to train and test sets, so that 80% of the data belongs to the train set. (0-2 points)
+
+boston_scaled <- scale(Boston)
+summary(boston_scaled)
+```
+Columns are scaled by first subtracting column values by the corresponding column mean, and then dividing the difference by standard deviation. This way, the mean for all variables is at 0, and we can compare variables in a more meaningful way.
+
+```{r}
+
+boston_scaled<-as.data.frame(boston_scaled)
+boston_scaled$crim <- as.numeric(boston_scaled$crim)
+# create a quantile vector of crim and print it
+bins <- quantile(boston_scaled$crim)
+bins
+
+# create a categorical variable 'crime'
+crime <- cut(boston_scaled$crim, breaks = bins, include.lowest = TRUE, label=c("low","med_low","med_high","high"))
+
+# look at the table of the new factor crime
+table(crime)
+
+# remove original crim from the dataset
+boston_scaled <- dplyr::select(boston_scaled, -crim)
+
+# add the new categorical value to scaled data
+boston_scaled <- data.frame(boston_scaled, crime)
+
+# number of rows in the Boston dataset 
+n <- nrow(boston_scaled)
+
+# choose randomly 80% of the rows
+ind <- sample(n,  size = n * 0.8)
+
+# create train set
+train <- boston_scaled[ind,]
+
+# create test set 
+test <- boston_scaled[-ind,]
+
+```
+
+## 5. 
+
+```{r}
+# Fit the linear discriminant analysis on the train set. Use the categorical crime rate as the target variable and all the other variables in the dataset as predictor variables. Draw the LDA (bi)plot. (0-3 points)
+
+# linear discriminant analysis
+lda.fit <- lda(crime ~ ., data = train)
+
+# print the lda.fit object
+lda.fit
+
+# the function for lda biplot arrows
+lda.arrows <- function(x, myscale = 1, arrow_heads = 0.1, color = "red", tex = 0.75, choices = c(1,2)){
+  heads <- coef(x)
+  arrows(x0 = 0, y0 = 0, 
+         x1 = myscale * heads[,choices[1]], 
+         y1 = myscale * heads[,choices[2]], col=color, length = arrow_heads)
+  text(myscale * heads[,choices], labels = row.names(heads), 
+       cex = tex, col=color, pos=3)
+}
+
+# target classes as numeric
+classes <- as.numeric(train$crime)
+
+# plot the lda results
+plot(lda.fit, dimen = 2, col = classes, pch = classes)
+lda.arrows(lda.fit, myscale = 2)
+
+
+```
+
+
+
+```{r}
+# Save the crime categories from the test set and then remove the categorical crime variable from the test dataset. Then predict the classes with the LDA model on the test data. Cross tabulate the results with the crime categories from the test set. Comment on the results. (0-3 points)
+
+# save the correct classes from test data
+correct_classes <- test$crime
+
+# remove the crime variable from test data
+test <- dplyr::select(test, -crime)
+
+# predict classes with test data
+lda.pred <- predict(lda.fit, newdata = test)
+
+# cross tabulate the results
+table(correct = correct_classes, predicted = lda.pred$class)
+
+```
+
