@@ -4,12 +4,13 @@
 
 ```{r}
 date()
-#library(ggplot2)
+
 #library(GGally)
 #library(dplyr)
 library(MASS)
 library(tidyr)
 library(corrplot)
+library(ggplot2)
 data("Boston")
 
 ```
@@ -47,7 +48,7 @@ pairs(Boston)
 ```
 ### Commenting on median value plotted against other factors: 
 Not surprisingly, higher-value areas have lower crime rates. The density of residential areas (var zn) and whether tract bounds river (chas [this is not surprising as this is a dummy variable anyway]) do not have a clear effect on housing value. Prices seem to be lower where industrial density is very high, but low industrial density has both high and low-value areas. The situation looks fairly similar with highly polluted areas (one might ask how independent nox and indus are). As average number of rooms in units (rm) grows, so does value -- again, not surprisingly. 
-Newest areas are not cheap, but the priciest areas are not new. Both the cheapest and the most expensive area seem to have a short distance to Boston employment centers. Rad -- index of accessibility to radial highways -- seems to have a very binary distribution despite its values varying from 1 to 24. I am not sure how to interpret how tax and value are related (the highest taxes seem to be in cheapest areas, which seems odd from someone coming from a progressive tax state). Pupil-teacher ratio is generally lower in more valuable neighborhoods, as one would expect. Towns with a lower proportion of African-Americans are not among the most expensive areas. There is a high correlation between the price of housing and lower percentage of "lower-status" population (whatever that means).
+Newest areas are not cheap, but the priciest areas are not new. Both the cheapest and the most expensive area seem to have a short distance to Boston employment centers. Rad -- index of accessibility to radial highways -- seems to have a very binary distribution despite its values varying from 1 to 24. I am not sure how to interpret how tax and value are related (the highest taxes seem to be in cheapest areas, which seems odd from someone coming from a progressive tax state). Pupil-teacher ratio is generally lower in more valuable neighborhoods, as one would expect. Towns with a lower proportion of African-Americans are not among the most expensive areas. There is a high correlation between the price of housing and lower percentage of "lower-status" population (i.e., male workers classified as laborers and adults with no high school education).
 
 
 ```{r}
@@ -129,12 +130,13 @@ classes <- as.numeric(train$crime)
 
 # plot the lda results
 plot(lda.fit, dimen = 2, col = classes, pch = classes)
-lda.arrows(lda.fit, myscale = 2)
+lda.arrows(lda.fit, myscale = 2.5)
 
 
 ```
 
 
+## 6.
 
 ```{r}
 # Save the crime categories from the test set and then remove the categorical crime variable from the test dataset. Then predict the classes with the LDA model on the test data. Cross tabulate the results with the crime categories from the test set. Comment on the results. (0-3 points)
@@ -147,9 +149,65 @@ test <- dplyr::select(test, -crime)
 
 # predict classes with test data
 lda.pred <- predict(lda.fit, newdata = test)
+```
 
+
+```{r}
 # cross tabulate the results
+results <- table(correct = correct_classes, predicted = lda.pred$class)
+
+# calculate model precision & sensitivity
 table(correct = correct_classes, predicted = lda.pred$class)
+1-diag(results)/colSums(results) # Precision: fraction of false positives
+1-diag(results)/rowSums(results) # Sensitivity: fraction of false negatives
 
 ```
+The model is best at predicting high crime areas. No areas were misclassified as high, although one high area was falsely classified as med_high. The model had more difficulties with classes med_high and med_low; many med_high classes were incorrectly classified as med_low, making 45% of med_low classifications incorrect and greatly reducing the sensitivity of med_high classification. Areas with a low crime rate were better classified, with about 80% precision and 26% sensitivity.
+
+## 7.
+```{r}
+# Make another scaled Boston data set
+boston_scaled <- scale(Boston)
+
+# Distances between observations
+summary(dist(boston_scaled))
+
+```
+
+An ideal grouping has a minimal within-group sum of squares ("WGSS") over all variables. Let's plot these for one to ten-group solutions to see which solution has the smallest WGSS.
+
+```{r}
+set.seed(123)
+
+# determine the number of clusters
+k_max <- 10
+
+# calculate the total within sum of squares
+twcss <- sapply(1:k_max, function(k){kmeans(Boston, k)$tot.withinss})
+
+# visualize the results
+df<- data.frame(wgss=c(twcss),groups=1:k_max)
+ggplot(data = df, aes(x=groups, y=wgss)) + geom_line() + scale_x_continuous(breaks = 1:10)
+
+```
+There are two "elbows" in the plot, at 3 and 8 groups. Let's investigate those further. 
+
+```{r}
+set.seed(123)
+
+# k-means clustering
+km3 <- kmeans(boston_scaled, centers = 3)
+
+# plot the Boston dataset with clusters
+pairs(boston_scaled, col = km3$cluster)
+
+# k-means clustering
+km8 <- kmeans(boston_scaled, centers = 8)
+
+# plot the Boston dataset with clusters
+pairs(boston_scaled, col = km8$cluster)
+
+```
+It's difficult to point out any single variable based on which the groups have been clustered (which is a good sign, I suppose).  It's likely that km3 makes a better model of the data as groups 4-7 actually make the model worse; km8 might just overfit the data by dividing groups into unnecessary subgroups. 
+
 

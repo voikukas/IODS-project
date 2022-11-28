@@ -1,0 +1,42 @@
+# Saara Kaskivuo 28/11/22
+# Data wrangling, assignment 4
+
+#library(tidyverse)
+#library(dplyr)
+#library(boot)
+#library(readr)
+
+### Data wrangling 2 & 3.
+hd <- read_csv("https://raw.githubusercontent.com/KimmoVehkalahti/Helsinki-Open-Data-Science/master/datasets/human_development.csv")
+gii <- read_csv("https://raw.githubusercontent.com/KimmoVehkalahti/Helsinki-Open-Data-Science/master/datasets/gender_inequality.csv", na = "..")
+str(hd)
+str(gii)
+
+# HD contains the data for calculating the Human Development Index by country.
+# 195 observations (countries) and 8 variables
+
+# GII contains the data for calculating Gender Inequality Index by country. 
+# 195 observations (countries) and 10 variables
+
+# Details about the data: https://hdr.undp.org/system/files/documents//technical-notes-calculating-human-development-indices.pdf
+
+summary(hd)
+summary(gii)
+
+
+### Data wrangling 4.
+colnames(hd) <- c("hdi.rank","country","hdi","life.exp","edu.exp","edu.mean","gni","gni.hdi.rank.diff")
+colnames(gii) <- c("gii.rank","country","gii","mat.mor","ado.birth","parli.f","edu2.f","edu2.m","labo.f","labo.m")
+
+### Data wrangling 5.
+gii <- mutate(gii, "edu2.fm" = edu2.f/edu2.m)
+gii <- mutate(gii, "labo.fm" = labo.f/labo.m)
+
+### Data wrangling 6.
+human <- inner_join(gii, hd, by = "country")
+
+glimpse(human)
+# ok
+
+write.csv(human, file = "human.csv", row.names = TRUE)
+
