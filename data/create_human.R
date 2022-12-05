@@ -1,5 +1,5 @@
 # Saara Kaskivuo 28/11/22
-# Data wrangling, assignment 4
+# Data wrangling, assignment 4 & 5
 
 #library(tidyverse)
 #library(dplyr)
@@ -38,5 +38,43 @@ human <- inner_join(gii, hd, by = "country")
 glimpse(human)
 # ok
 
-write.csv(human, file = "human.csv", row.names = TRUE)
+#write.csv(human, file = "data/human.csv", row.names = TRUE)
+
+### End assignment 4
+### Begin assignment 5
+
+# Data wrangling (no number)
+human <- read.csv("data/human.csv")
+# The data set is a combined set of variables describing human development indices. 
+# Our version will (after wrangling) include the following variables:
+# country as row name
+# edu2.fm | avg of female and male population with at least secondary education (%)
+# labo.fm | avg of labour market index (labour force participation rate, %)
+# edu.exp | expected years of schooling (years)
+# life.exp | life expectancy (years)
+# gni | gross national income per capita ($)
+# mat.mor | maternal mortality ratio (deaths per 100,000 live births)
+# ado.birth | adolescent birth rate (births per 1,000 girls/women aged 15-19)
+# parli.f | female shares of parliamentary seats (%)
+
+# Data wrangling 1.
+human$gni <- as.numeric(human$gni)
+
+# Data wrangling 2.
+keep_cols <- tolower(c("Country", "Edu2.FM", "Labo.FM", "Edu.Exp", "Life.Exp", "GNI", "Mat.Mor", "Ado.Birth", "Parli.F"))
+human <- human %>% select(all_of(keep_cols))
+
+# Data wrangling 3 & 4
+human <- filter(human, complete.cases(human))
+human <- human[1:155,] # solution from ex. 5
+
+# Data wrangling 5 
+rownames(human) <- human$country
+human <- select(human, -country)
+
+write.csv(human, file = "data/human.csv", row.names = TRUE)
+
+
+
+
 

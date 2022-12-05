@@ -1,0 +1,87 @@
+# Dimensionality reduction techniques
+
+
+
+```{r}
+date()
+
+library(GGally)
+library(dplyr)
+#library(MASS)
+library(tidyr)
+library(corrplot)
+library(ggplot2)
+library(FactoMineR)
+
+human <- read.table("https://raw.githubusercontent.com/KimmoVehkalahti/Helsinki-Open-Data-Science/master/datasets/human2.txt", sep =",", header = TRUE)
+
+```
+
+## 1. 
+
+
+```{r}
+
+# Note: the variables and data set are described in create_human.R
+
+summary(human)
+corhum <- cor(human)
+corrplot(corhum, type="upper", col=COL2(diverging="PuOr"))
+
+#human_scaled <- scale(human)
+
+```
+Life expectancy and maternal mortality make the strongest negative correlation, which is not surprising because an early maternal death brings life expectancy down. Adolescent birth rate and maternal mortality are, likewise, strongly correlated. Expected years of schooling strongly correlates with life expectancy. While strong, the correlation between share of population with at least secondary education and expected years of education is not among the highest. Perhaps education caps at some stage. 
+
+
+```{r}
+ggpairs(human)
+```
+
+Looking at the distributions, only expected education looks "normally" distributed. As can also be seen from the summary, it is most common for most of the population to have a secondary education in the majority of countries. The most striking differences in variation can be seen in gross national income, maternal mortality and adolescent birth rate (where countries with a high gni are likely to have low maternal mortality).  
+
+
+## 2. 
+
+```{r echo=TRUE, warning=FALSE}
+pca_human <- prcomp(human)
+
+biplot(pca_human)
+
+```
+
+
+## 3. & 4.
+```{r echo=FALSE}
+human_sc <- scale(human)
+pca_human_sc <- prcomp(human_sc)
+
+biplot(pca_human_sc)
+
+```
+
+Scaling allows meaningful comparison between variables; as the numerical value of GNI was so large, it was likely to take over the whole model. The results look very different between scaled and non-scaled PCA. 
+It is hard to make sense of the non-scaled PCA because of overlapping text.
+
+In the scaled model, PC1 includes two sets of variables on opposite sides of the x axis. As mentioned before, maternal mortality and adolescent birth rates are intercorrelated, and countries with high GNI and life expectancy have low maternal mortality and birth rates. 
+
+The two components are rather orthogonal. This means that they are independent of one another. PC2 includes labour market participation rate and female shares of parliamentary seats. Both countries with high GNI, etc. and countries with higher maternal mortality etc. may have high or low shares of parliamentary seats for women or working population. 
+
+## 5. 
+```{r}
+tea_time <- read.csv("https://raw.githubusercontent.com/KimmoVehkalahti/Helsinki-Open-Data-Science/master/datasets/tea_time.csv", stringsAsFactors = TRUE)
+
+View(tea_time)
+```
+
+
+
+```{r}
+
+mca <- MCA(tea_time, graph = FALSE)
+plot(mca, invisible=c("ind"), graph.type = "classic", habillage="quali")
+
+```
+The closer the points are, the more similar their profiles are. For instance, Earl Grey, sugar and milk seem to go well together; tea bags are bought at chain stores; unpackaged tea is bought at tea shops. 
+
+
