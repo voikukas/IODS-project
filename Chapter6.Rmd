@@ -1,0 +1,245 @@
+# Analysis of longitudinal data
+
+
+
+```{r}
+library(GGally)
+library(dplyr)
+#library(MASS)
+library(tidyr)
+library(corrplot)
+library(ggplot2)
+#library(FactoMineR)
+library(lme4)
+
+```
+```{r}{ echo=TRUE}
+# just in case: 
+rats <- read.table("https://raw.githubusercontent.com/KimmoVehkalahti/MABS/master/Examples/data/rats.txt", header = TRUE, sep = '\t')
+rats$ID <- factor(RATS$ID)
+rats$Group <- factor(RATS$Group)
+ratsl <- pivot_longer(RATS, cols=-c(ID,Group), names_to = "WD",values_to = "Weight")  %>%  mutate(Time = as.integer(substr(WD,3,4))) %>% arrange(Time)
+
+bprs <- read.table("https://raw.githubusercontent.com/KimmoVehkalahti/MABS/master/Examples/data/bprs.txt", sep  =" ", header = T)
+bprs$treatment <- factor(bprs$treatment)
+bprs$subject <- factor(bprs$subject)
+bprsl <-  pivot_longer(bprs, cols=-c(treatment,subject),names_to = "weeks",values_to = "bprs") %>% arrange(weeks)
+bprsl <-  bprsl %>% mutate(week = as.integer(substr(weeks,5,5)))
+bprsl <- bprsl %>%
+  group_by(week) %>%
+  mutate( stdbprs = (bprs - mean(bprs))/sd(bprs) ) %>%
+  ungroup()
+bprsl8S <- bprsl %>%
+  filter(week > 0) %>%
+  group_by(treatment, subject) %>%
+  summarise( mean=mean(bprs) ) %>%
+  ungroup()
+rm(bprsl)
+bprsl8S1 <- bprsl8S %>%
+  filter(mean < 60)
+
+
+
+```
+
+
+
+## Part 1 
+
+
+```{r}
+# Chapter 8 analyses
+# Using RATS data
+# Plot values for all rats
+
+str(rats)
+str(ratsl)
+summary(rats)
+
+
+```
+* The structure seems OK: ID is a factor with 16 levels (so there are 16 rats); group is a factor with 3 levels (so there are 3 manipulation groups in the study).
+* Data in the wide form gives us an idea of the means of weekly weights of all rats. 
+
+Let's plot individuals on the plot.
+```{r}
+ggplot(ratsl, aes(x = Time, y = Weight, col = ID, linetype = ID)) +
+  geom_line() +
+  scale_linetype_manual(values = rep(1:10, times=4)) +
+  facet_grid(. ~ Group, labeller = label_both) +
+  theme(legend.position = "none") + 
+  scale_y_continuous(limits = c(min(ratsl$Weight), max(ratsl$Weight)))
+
+```
+The rats start at very different weights: group 1 seems to have the lightest rats, for instance. Also, there's one particularly chonky rat in Group 2. Let's look at the data again after standardizing it. 
+
+
+```{r echo=TRUE, warning=FALSE}
+
+ratsl <- ratsl %>%
+  group_by(Time) %>%
+  mutate(stdw = (Weight-mean(Weight))/sd(Weight)) %>%
+  ungroup()
+
+# Glimpse the data
+glimpse(ratsl)
+
+# Plot again with the standardised bprs
+ggplot(ratsl, aes(x = Time, y = stdw, col = ID, linetype = ID)) +
+  geom_line() +
+  scale_linetype_manual(values = rep(1:10, times=4)) +
+  facet_grid(. ~ Group, labeller = label_both) +
+  theme(legend.position = "none") + 
+  scale_y_continuous(limits = c(min(ratsl$stdw), max(ratsl$stdw)))
+
+```
+
+
+
+Let's plot summary graphs for each group, also visualizing standard error of the mean.
+```{r echo=FALSE, warning=FALSE}
+# Get n for each treatment group from the wide data
+n_1 <- nrow(rats[rats$Group == 1,])
+n_2 <- nrow(rats[rats$Group == 2,])
+n_3 <- nrow(rats[rats$Group == 3,])
+
+# Because n for group 1 is not the same as for groups 2 and 3 (and n squared is needed for se calculation), let's summarize them separately and recombine
+ratss1 <- filter(ratsl, Group == 1) %>% group_by(Group, Time) %>% summarise( mean = mean(Weight), se = c(sd(Weight)/sqrt(n_1)) ) %>% ungroup()
+ratss2 <- filter(ratsl, Group != 1) %>% group_by(Group, Time) %>% summarise( mean = mean(Weight), se = c(sd(Weight)/sqrt(n_2)) ) %>% ungroup()
+
+ratss <- rbind(ratss1, ratss2)
+
+# Plot mean profiles
+library(ggplot2)
+ggplot(ratss, aes(x = Time, y = mean, linetype = Group, shape = Group)) +
+  geom_line() +
+  scale_linetype_manual(values = c(1,2,3)) +
+  geom_point(size=3) +
+  scale_shape_manual(values = c(1,2,3)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se, linetype="1"), width=0.3) +
+  theme(legend.position = c(.9,.5)) +
+  scale_y_continuous(name = "mean(Weight) +/- se(Weight)")
+```
+From this graph, we can see that group two seems to have a very large standard error -- likely due to the chonky outlier. 
+
+
+Let's look at boxplots by group means (excluding day 1) & then filter the outlier and redo the plots.  
+```{r}
+ratsm <- ratsl %>%
+  filter(Time > 1) %>%
+  group_by(Group, ID) %>%
+  summarise( mean=mean(Weight) ) %>%
+  ungroup()
+
+glimpse(ratsm)
+
+# Draw a boxplot of the mean versus treatment
+library(ggplot2)
+ggplot(ratsm, aes(x = Group, y = mean)) +
+  geom_boxplot() +
+  stat_summary(fun = "mean", geom = "point", shape=23, size=4, fill = "white") +
+  scale_y_continuous(name = "mean(weight)")
+
+# Create a new data by filtering the outlier and adjust the ggplot code the draw the plot again with the new data
+ratsm_15 <- ratsm %>% filter(mean < 550)
+library(ggplot2)
+ggplot(ratsm_15, aes(x = Group, y = mean)) +
+  geom_boxplot() +
+  stat_summary(fun = "mean", geom = "point", shape=23, size=4, fill = "white") +
+  scale_y_continuous(name = "mean(weight)")
+```
+```{r}
+ratsm <- ratsl %>%
+  filter(Time > 1) %>%
+  group_by(Group, ID) %>%
+  summarise( mean=mean(Weight) ) %>%
+  ungroup()
+
+glimpse(ratsm)
+
+# Draw a boxplot of the mean versus treatment
+library(ggplot2)
+ggplot(ratsm, aes(x = Group, y = mean)) +
+  geom_boxplot() +
+  stat_summary(fun = "mean", geom = "point", shape=23, size=4, fill = "white") +
+  scale_y_continuous(name = "mean(weight)")
+
+# Create a new data by filtering the outlier and adjust the ggplot code the draw the plot again with the new data
+ratsm_15 <- ratsm %>% filter(mean < 550)
+library(ggplot2)
+ggplot(ratsm_15, aes(x = Group, y = mean)) +
+  geom_boxplot() +
+  stat_summary(fun = "mean", geom = "point", shape=23, size=4, fill = "white") +
+  scale_y_continuous(name = "mean(weight)")
+```
+
+The means look quite different. Let's do an analysis of variance. 
+```{r}
+rats_15 <- rats %>% filter(rats$WD1 < 550)
+
+ratsm_15 <- ratsm_15 %>%
+  mutate(baseline = rats_15$WD1)
+
+# Fit the linear model with the mean as the response 
+fit <- lm(mean ~ baseline + Group, data = ratsm_15)
+
+# Compute the analysis of variance table for the fitted model with anova()
+anova(fit)
+
+```
+
+There is a significant group difference, although baseline seems to be even more related to the mean weights. The groups have not been very well balanced to begin with, so with ANOVA, we can't make any strong conclusions of whether different diets make a difference in the development of rat weights.
+
+## Part 2 
+
+Visualizing subjects by group...
+```{r}
+
+ggplot(bprsl, aes(x = weeks, y = bprs, linetype = subject)) +
+  geom_line() +
+  scale_linetype_manual(values = rep(1:10, times=4)) +
+  facet_grid(. ~ treatment, labeller = label_both) +
+  theme(legend.position = "none") + 
+  scale_y_continuous(limits = c(min(bprsl$bprs), max(bprsl$bprs)))
+
+```
+It might make sense to remove the outlier from treatment 2 group. 
+
+```{r}
+
+bprs_reg <- lm(bprs ~ treatment + weeks, data = bprsl)
+
+# print out a summary of the model
+summary(bprs_reg)
+
+```
+
+```{r}
+
+# Create a random intercept model
+bprs_ref <- lmer(bprs ~ weeks + treatment + (1 | subject), data = bprsl, REML = FALSE)
+
+# Print the summary of the model
+summary(bprs_ref)
+
+```
+
+```{r}
+bprs_ref_2 <- lmer(bprs ~ weeks + treatment + (weeks | subject), data = bprsl, REML = FALSE)
+summary(bprs_ref_2)
+
+```
+```{r}
+anova(bprs_ref, bprs_ref_2)
+```
+
+```{r}
+bprs_ref_3 <- lmer(bprs ~ weeks + treatment + (weeks | subject) + weeks * treatment, data = bprsl, REML = FALSE)
+
+# print a summary of the model
+summary(bprs_ref_3)
+
+# perform an ANOVA test on the two models
+anova(bprs_ref_2, bprs_ref_3)
+```
+Unfortunately, I ran out of time before getting the rest of this to work & supplying analyses. 
